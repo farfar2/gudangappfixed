@@ -90,10 +90,18 @@ export const SkuManagementView: React.FC = () => {
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    // importSKUs sekarang handle parsing sendiri
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const text = await file.text();
+  const r = await importSKUs(text);
+  if (r.added === 0 && r.updated === 0 && r.errors.length > 0) {
+    addToast('error', 'Error CSV', r.errors.slice(0, 3).join('; '));
+  } else {
+    addToast('success', 'Import Selesai',
+      `${r.added} ditambahkan, ${r.updated} diperbarui${r.errors.length > 0 ? `, ${r.errors.length} error` : ''}`);
+  }
+  if (fileRef.current) fileRef.current.value = '';
+};
     
     const r = await importSKUs(text);
     addToast('success', 'Import Selesai', `${r.added} ditambahkan, ${r.updated} diperbarui`);
