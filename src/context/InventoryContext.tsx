@@ -43,7 +43,7 @@ const GUDANG_B_ID = '00000000-0000-0000-0000-000000000002';
 export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin } = useAuth();
 
-  const [warehouses]      = useState<Warehouse[]>(SEED_WAREHOUSES);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>(SEED_WAREHOUSES);
   const [skus,            setSkus]            = useState<SKU[]>(SEED_SKUS);
   const [stocks,          setStocks]          = useState<Stock[]>(SEED_STOCK);
   const [movements,       setMovements]       = useState<StockMovement[]>(SEED_MOVEMENTS);
@@ -65,7 +65,8 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!isSupabaseConfigured || !supabase || !user) return;
     setLoading(true);
     try {
-      const [skuRes, stockRes, movRes, poRes, salesRes] = await Promise.all([
+      const [whRes, skuRes, stockRes, movRes, poRes, salesRes] = await Promise.all([
+        supabase.from('warehouses').select('*'),
         supabase.from('skus').select('*').order('code'),
         supabase.from('stock').select('*'),
         supabase.from('stock_movements').select('*').order('created_at', { ascending: false }).limit(200),
@@ -73,6 +74,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         supabase.from('sales_history').select('*'),
       ]);
       if (skuRes.data   && skuRes.data.length > 0)   setSkus(skuRes.data);
+      if (whRes.data    && whRes.data.length > 0)     setWarehouses(whRes.data);
       if (stockRes.data && stockRes.data.length > 0)  setStocks(stockRes.data);
       if (movRes.data   && movRes.data.length > 0)    setMovements(movRes.data);
       if (poRes.data    && poRes.data.length > 0)     setPurchaseOrders(poRes.data);
