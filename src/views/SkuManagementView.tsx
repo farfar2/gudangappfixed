@@ -12,13 +12,12 @@ export const SkuManagementView: React.FC = () => {
   const { skus, addSKU, updateSKU, softDeleteSKU, importSKUs, addToast } = useInventory();
   const { isAdmin } = useAuth();
 
-  const [search, setSearch]               = useState('');
-  const [filterCat, setFilterCat]         = useState('all');
-  const [showInactive, setShowInactive]   = useState(false);
-  const [modalOpen, setModalOpen]         = useState(false);
-  const [editingSKU, setEditingSKU]       = useState<SKU | null>(null);
-  const [importOpen, setImportOpen]       = useState(false);
-  const [dbCategories, setDbCategories]   = useState<string[]>([]);
+  const [search, setSearch]             = useState('');
+  const [filterCat, setFilterCat]       = useState('all');
+  const [showInactive, setShowInactive] = useState(false);
+  const [modalOpen, setModalOpen]       = useState(false);
+  const [editingSKU, setEditingSKU]     = useState<SKU | null>(null);
+  const [dbCategories, setDbCategories] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -26,7 +25,6 @@ export const SkuManagementView: React.FC = () => {
     price_per_unit: 0, qty_per_box: 1, m3_per_box: 0.01,
   });
 
-  // Load categories from DB or fallback to extracted from SKUs
   useEffect(() => {
     const load = async () => {
       if (isSupabaseConfigured && supabase) {
@@ -36,7 +34,6 @@ export const SkuManagementView: React.FC = () => {
           return;
         }
       }
-      // Fallback: extract from existing SKUs
       const set = new Set(skus.map(s => s.category).filter(Boolean));
       setDbCategories(set.size > 0 ? Array.from(set) : FALLBACK_CATEGORIES);
     };
@@ -70,42 +67,38 @@ export const SkuManagementView: React.FC = () => {
     setModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingSKU) {
-      const r = updateSKU(editingSKU.id, form);
+      const r = await updateSKU(editingSKU.id, form);
       if (r.success) { setModalOpen(false); addToast('success', 'Tersimpan', `SKU ${form.code} diperbarui`); }
       else addToast('error', 'Gagal', r.error ?? 'Terjadi kesalahan');
     } else {
-      const r = addSKU(form);
+      const r = await addSKU(form);
       if (r.success) { setModalOpen(false); addToast('success', 'Tersimpan', `SKU ${form.code} ditambahkan`); }
       else addToast('error', 'Gagal', r.error ?? 'Terjadi kesalahan');
     }
   };
 
-  const handleDelete = (sku: SKU) => {
+  const handleDelete = async (sku: SKU) => {
     if (!confirm(`Nonaktifkan SKU ${sku.code}?`)) return;
-    const r = softDeleteSKU(sku.id);
+    const r = await softDeleteSKU(sku.id);
     if (r.success) addToast('success', 'Dinonaktifkan', `SKU ${sku.code} dinonaktifkan`);
+    else addToast('error', 'Gagal', r.error ?? 'Terjadi kesalahan');
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const text = await file.text();
-  const r = await importSKUs(text);
-  if (r.added === 0 && r.updated === 0 && r.errors.length > 0) {
-    addToast('error', 'Error CSV', r.errors.slice(0, 3).join('; '));
-  } else {
-    addToast('success', 'Import Selesai',
-      `${r.added} ditambahkan, ${r.updated} diperbarui${r.errors.length > 0 ? `, ${r.errors.length} error` : ''}`);
-  }
-  if (fileRef.current) fileRef.current.value = '';
-};
-    
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
     const r = await importSKUs(text);
-    addToast('success', 'Import Selesai', `${r.added} ditambahkan, ${r.updated} diperbarui`);
-    setImportOpen(false);
+    if (r.added === 0 && r.updated === 0 && r.errors.length > 0) {
+      addToast('error', 'Error CSV', r.errors.slice(0, 3).join('; '));
+    } else {
+      addToast('success', 'Import Selesai',
+        `${r.added} ditambahkan, ${r.updated} diperbarui${r.errors.length > 0 ? `, ${r.errors.length} error` : ''}`);
+    }
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   const field = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -136,7 +129,6 @@ export const SkuManagementView: React.FC = () => {
         )}
       </div>
 
-      {/* Toolbar */}
       <div className="toolbar" style={{ marginBottom: 16 }}>
         <div className="search-wrap">
           <Search size={14} />
@@ -158,7 +150,6 @@ export const SkuManagementView: React.FC = () => {
         </span>
       </div>
 
-      {/* Table */}
       <div className="tbl-wrap">
         <div className="tbl-wrap-scroll">
           <table className="tbl">
@@ -230,7 +221,6 @@ export const SkuManagementView: React.FC = () => {
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
       {modalOpen && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalOpen(false)}>
           <div className="modal modal-lg">
