@@ -43,7 +43,7 @@ const GUDANG_B_ID = '00000000-0000-0000-0000-000000000002';
 export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin } = useAuth();
 
-  const [warehouses, setWarehouses] = useState<Warehouse[]>(SEED_WAREHOUSES);
+  const [warehouses]      = useState<Warehouse[]>(SEED_WAREHOUSES);
   const [skus,            setSkus]            = useState<SKU[]>(SEED_SKUS);
   const [stocks,          setStocks]          = useState<Stock[]>(SEED_STOCK);
   const [movements,       setMovements]       = useState<StockMovement[]>(SEED_MOVEMENTS);
@@ -65,8 +65,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!isSupabaseConfigured || !supabase || !user) return;
     setLoading(true);
     try {
-      const [whRes, skuRes, stockRes, movRes, poRes, salesRes] = await Promise.all([
-        supabase.from('warehouses').select('*'),
+      const [skuRes, stockRes, movRes, poRes, salesRes] = await Promise.all([
         supabase.from('skus').select('*').order('code'),
         supabase.from('stock').select('*'),
         supabase.from('stock_movements').select('*').order('created_at', { ascending: false }).limit(200),
@@ -74,7 +73,6 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         supabase.from('sales_history').select('*'),
       ]);
       if (skuRes.data   && skuRes.data.length > 0)   setSkus(skuRes.data);
-      if (whRes.data    && whRes.data.length > 0)     setWarehouses(whRes.data);
       if (stockRes.data && stockRes.data.length > 0)  setStocks(stockRes.data);
       if (movRes.data   && movRes.data.length > 0)    setMovements(movRes.data);
       if (poRes.data    && poRes.data.length > 0)     setPurchaseOrders(poRes.data);
@@ -87,6 +85,57 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [user]);
 
   useEffect(() => { loadFromSupabase(); }, [loadFromSupabase]);
+
+
+  // ─── Supabase Realtime ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase || !user) return;
+
+    const channel = supabase
+      .channel('gudangapp-realtime')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'stock' },
+        (payload) => {
+          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+            const updated = payload.new as Stock;
+            setStocks(prev => {
+              const idx = prev.findIndex(s => s.id === updated.id);
+              if (idx >= 0) {
+                const next = [...prev];
+                next[idx] = updated;
+                return next;
+              }
+              return [...prev, updated];
+            });
+          }
+        }
+      )
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'stock_movements' },
+        (payload) => {
+          const newMov = payload.new as StockMovement;
+          setMovements(prev => {
+            if (prev.find(m => m.id === newMov.id)) return prev;
+            return [newMov, ...prev.slice(0, 199)];
+          });
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'skus' },
+        (payload) => {
+          if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as SKU;
+            setSkus(prev => prev.map(s => s.id === updated.id ? updated : s));
+          } else if (payload.eventType === 'INSERT') {
+            const newSku = payload.new as SKU;
+            setSkus(prev => prev.find(s => s.id === newSku.id) ? prev : [...prev, newSku]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   const refreshData = useCallback(() => loadFromSupabase(), [loadFromSupabase]);
 
