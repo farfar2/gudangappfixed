@@ -78,6 +78,7 @@ const MainApp: React.FC = () => {
       case 'audit':           return <AuditLogView />;
       case 'categories':      return <CategoryManagementView />;
       case 'users':           return <UserManagementView />;
+      case 'analytics':       return <AnalyticsView />;
       default:                return <DashboardView onNavigate={setActiveTab} />;
     }
   };
