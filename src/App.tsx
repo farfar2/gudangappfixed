@@ -15,6 +15,7 @@ import { PurchaseOrdersView } from './views/PurchaseOrdersView';
 import { AuditLogView } from './views/AuditLogView';
 import { CategoryManagementView } from './views/CategoryManagementView';
 import { UserManagementView } from './views/UserManagementView';
+import { AnalyticsView } from './views/AnalyticsView';
 import { ToastContainer } from './components/common/Toast';
 
 const PAGE_TITLES: Record<ActiveTab, string> = {
@@ -29,6 +30,7 @@ const PAGE_TITLES: Record<ActiveTab, string> = {
   audit:           'Log Aktivitas',
   users:           'Manajemen User',
   categories:      'Kategori Barang',
+  analytics:       'Laporan Analitik',
 };
 
 const MainApp: React.FC = () => {
