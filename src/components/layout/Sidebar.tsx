@@ -2,14 +2,14 @@ import React from 'react';
 import {
   LayoutDashboard, PackageSearch, PackagePlus, PackageMinus,
   RefreshCcw, Boxes, BarChart3, Tag, ClipboardList,
-  ScrollText, Users, FolderOpen, LogOut, Menu
+  ScrollText, Users, FolderOpen, LogOut, Menu, BarChart2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export type ActiveTab =
   | 'dashboard' | 'scan_in' | 'scan_out' | 'restock'
   | 'skus' | 'inventory' | 'labels' | 'purchase_orders'
-  | 'audit' | 'users' | 'categories';
+  | 'audit' | 'users' | 'categories' | 'analytics';
 
 interface SidebarProps {
   active: ActiveTab;
@@ -64,6 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ active, onNavigate, mobileOpen
       items: [
         { id: 'purchase_orders', label: 'Purchase Order', icon: ICON(ClipboardList) },
         { id: 'audit',           label: 'Log Aktivitas',  icon: ICON(ScrollText)    },
+        { id: 'analytics',       label: 'Laporan Analitik', icon: ICON(BarChart2)      },
       ],
     },
     {
