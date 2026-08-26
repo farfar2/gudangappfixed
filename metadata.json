@@ -1,0 +1,6 @@
+{
+  "name": "GudangApp",
+  "description": "Warehouse Management System (WMS) untuk operasional pergudangan di Indonesia dengan manajemen SKU, stok Gudang A & B, scanner barcode USB, kalkulator restock, dan purchase order.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
